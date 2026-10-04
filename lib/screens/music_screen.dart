@@ -16,17 +16,26 @@ class MusicScreen extends StatefulWidget {
 }
 
 class _MusicScreenState extends State<MusicScreen> {
-  String _selectedTag = 'All';
+  late String _selectedTag;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  @override
+  void initState() {
+    super.initState();
+    _selectedTag = MockDataService.musicTags.first;
+  }
+
   List<Track> get _filteredTracks {
     return MockDataService.sampleTracks.where((track) {
-      final matchesTag = _selectedTag == 'All' || track.tag == _selectedTag;
-      final matchesQuery = _searchQuery.isEmpty ||
-          track.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          track.artist.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          track.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      final isAll = _selectedTag == 'همه' || _selectedTag == 'All';
+      final matchesTag = isAll || track.tag == _selectedTag;
+      final q = _searchQuery.trim().toLowerCase();
+      final matchesQuery = q.isEmpty ||
+          track.title.toLowerCase().contains(q) ||
+          track.artist.toLowerCase().contains(q) ||
+          track.description.toLowerCase().contains(q) ||
+          track.tags.any((t) => t.toLowerCase().contains(q));
       return matchesTag && matchesQuery;
     }).toList();
   }
@@ -39,17 +48,20 @@ class _MusicScreenState extends State<MusicScreen> {
     AccessibilityService.hapticSelection();
     final count = _filteredTracks.length;
     AccessibilityService.announce(
-      'Selected filter $tag. Showing $count ${count == 1 ? "track" : "tracks"}.',
+      'فیلتر $tag انتخاب شد. شامل $count قطعه.',
     );
   }
 
   void _showTrackDetails(Track track) {
-    AccessibilityService.announce('Opening song notes for ${track.title}');
+    AccessibilityService.announce('نمایش جزئیات قطعه ${track.title}');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: AppTheme.surface,
@@ -59,90 +71,115 @@ class _MusicScreenState extends State<MusicScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        track.title,
-                        style: const TextStyle(
-                          color: AppTheme.goldAccent,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          track.title,
+                          style: const TextStyle(
+                            color: AppTheme.goldAccent,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppTheme.textPrimary),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'By ${track.artist}',
-                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 15),
-              ),
-              const Divider(color: AppTheme.border, height: 24),
-              Text(
-                track.description,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15, height: 1.5),
-              ),
-              const SizedBox(height: 14),
-              if (track.notes.isNotEmpty) ...[
-                const Text(
-                  'Acoustic Notes & Composition Story:',
-                  style: TextStyle(
-                    color: AppTheme.cyanAccent,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppTheme.textPrimary),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  track.notes,
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14, height: 1.4),
+                  track.artist,
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 15),
                 ),
-                const SizedBox(height: 14),
-              ],
-              Row(
-                children: [
-                  Chip(
-                    backgroundColor: AppTheme.surfaceHighlight,
-                    label: Text('Key: ${track.musicalKey}'),
+                const Divider(color: AppTheme.border, height: 24),
+                // Caption / Story
+                Text(
+                  track.description,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 15,
+                    height: 1.6,
                   ),
-                  const SizedBox(width: 8),
-                  Chip(
-                    backgroundColor: AppTheme.surfaceHighlight,
-                    label: Text('${track.bpm} BPM'),
+                ),
+                const SizedBox(height: 16),
+
+                // Tags if available
+                if (track.tags.isNotEmpty) ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: track.tags.map((t) {
+                      return Chip(
+                        backgroundColor: AppTheme.surfaceHighlight,
+                        side: const BorderSide(color: AppTheme.cyanAccent, width: 0.8),
+                        label: Text(
+                          '#$t',
+                          style: const TextStyle(color: AppTheme.cyanAccent, fontSize: 12),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  const SizedBox(width: 8),
-                  Chip(
-                    backgroundColor: AppTheme.surfaceHighlight,
-                    label: Text(track.durationDigital),
-                  ),
+                  const SizedBox(height: 14),
                 ],
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  widget.audioService.playTrack(track);
-                },
-                icon: const Icon(Icons.play_arrow, color: Colors.black),
-                label: Text('PLAY ${track.title.toUpperCase()}'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
+
+                // Metadata Chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    Chip(
+                      backgroundColor: AppTheme.surfaceHighlight,
+                      avatar: const Icon(Icons.category, size: 16, color: AppTheme.goldAccent),
+                      label: Text(track.tag),
+                    ),
+                    Chip(
+                      backgroundColor: AppTheme.surfaceHighlight,
+                      avatar: const Icon(Icons.timer, size: 16, color: AppTheme.goldAccent),
+                      label: Text(track.durationDigital),
+                    ),
+                    if (track.hasStreamUrl)
+                      const Chip(
+                        backgroundColor: AppTheme.surfaceHighlight,
+                        avatar: Icon(Icons.cloud_done, size: 16, color: AppTheme.mintGreen),
+                        label: Text('پخش ابری مستقیم', style: TextStyle(color: AppTheme.mintGreen)),
+                      ),
+                    if (track.telegramMessageId != null)
+                      Chip(
+                        backgroundColor: AppTheme.surfaceHighlight,
+                        avatar: const Icon(Icons.send, size: 16, color: AppTheme.cyanAccent),
+                        label: Text('تلگرام #${track.telegramMessageId}', style: const TextStyle(color: AppTheme.cyanAccent)),
+                      ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    widget.audioService.playTrack(track);
+                  },
+                  icon: const Icon(Icons.play_arrow, color: Colors.black, size: 26),
+                  label: Text('پخش ${track.title}'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(54),
+                    backgroundColor: AppTheme.goldAccent,
+                    foregroundColor: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -168,15 +205,15 @@ class _MusicScreenState extends State<MusicScreen> {
                 children: [
                   Semantics(
                     textField: true,
-                    label: 'Search music tracks by title or keyword',
-                    hint: 'Type here to filter tracks in real time',
+                    label: 'جستجو در آرشیو قطعات موسیقی',
+                    hint: 'عنوان، شاعر یا برچسب مورد نظر را تایپ کنید',
                     child: TextField(
                       controller: _searchController,
                       style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: AppTheme.surfaceHighlight,
-                        hintText: 'Search tracks by title...',
+                        hintText: 'جستجو در ۲۴ قطعه موسیقی...',
                         hintStyle: const TextStyle(color: AppTheme.textMuted),
                         prefixIcon: const Icon(Icons.search, color: AppTheme.goldAccent),
                         suffixIcon: _searchQuery.isNotEmpty
@@ -187,7 +224,7 @@ class _MusicScreenState extends State<MusicScreen> {
                                     _searchController.clear();
                                     _searchQuery = '';
                                   });
-                                  AccessibilityService.announce('Search cleared');
+                                  AccessibilityService.announce('جستجو پاک شد');
                                 },
                               )
                             : null,
@@ -209,11 +246,12 @@ class _MusicScreenState extends State<MusicScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
                   // Accessible Tags Horizontal Filter
                   Semantics(
                     header: true,
                     child: const Text(
-                      'Categories',
+                      'دسته‌بندی‌ها',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -236,8 +274,8 @@ class _MusicScreenState extends State<MusicScreen> {
                         return Semantics(
                           button: true,
                           selected: isSelected,
-                          label: 'Filter by $tag. ${isSelected ? "Currently selected." : ""}',
-                          hint: 'Double tap to filter music list',
+                          label: 'فیلتر $tag. ${isSelected ? "انتخاب شده." : ""}',
+                          hint: 'دو بار ضربه بزنید برای اعمال فیلتر',
                           child: ChoiceChip(
                             label: Text(tag),
                             selected: isSelected,
@@ -267,11 +305,11 @@ class _MusicScreenState extends State<MusicScreen> {
               child: _filteredTracks.isEmpty
                   ? Center(
                       child: Semantics(
-                        label: 'No tracks found for the current search or filter.',
+                        label: 'هیچ قطعه‌ای مطابق با جستجو یا فیلتر پیدا نشد.',
                         child: const Padding(
                           padding: EdgeInsets.all(32),
                           child: Text(
-                            'No tracks found matching your query.\nTry picking another category.',
+                            'قطعه‌ای مطابق با جستجو یافت نشد.\nدسته‌بندی دیگری را انتخاب کنید.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppTheme.textMuted, fontSize: 16),
                           ),
@@ -290,7 +328,7 @@ class _MusicScreenState extends State<MusicScreen> {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: AccessibleCard(
                             semanticLabel: track.accessibilityLabel,
-                            semanticHint: 'Double tap to play or view details',
+                            semanticHint: 'برای پخش یا مشاهده توضیحات کامل دو بار ضربه بزنید',
                             borderColor: isCurrentTrack ? AppTheme.goldAccent : null,
                             backgroundColor: isCurrentTrack ? AppTheme.surfaceHighlight : null,
                             onTap: () => widget.audioService.playTrack(track),
@@ -300,8 +338,8 @@ class _MusicScreenState extends State<MusicScreen> {
                                 Semantics(
                                   button: true,
                                   label: isCurrentPlaying
-                                      ? 'Pause track: ${track.title}'
-                                      : 'Play track: ${track.title}',
+                                      ? 'توقف قطعه ${track.title}'
+                                      : 'پخش قطعه ${track.title}',
                                   child: Container(
                                     width: 52,
                                     height: 52,
@@ -366,12 +404,21 @@ class _MusicScreenState extends State<MusicScreen> {
                                             style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                                           ),
                                           const SizedBox(width: 12),
-                                          const Icon(Icons.piano, size: 14, color: AppTheme.cyanAccent),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            track.musicalKey,
-                                            style: const TextStyle(fontSize: 12, color: AppTheme.cyanAccent),
-                                          ),
+                                          if (track.hasStreamUrl) ...[
+                                            const Icon(Icons.cloud_done, size: 14, color: AppTheme.mintGreen),
+                                            const SizedBox(width: 4),
+                                            const Text(
+                                              'آنلاین',
+                                              style: TextStyle(fontSize: 12, color: AppTheme.mintGreen, fontWeight: FontWeight.bold),
+                                            ),
+                                          ] else ...[
+                                            const Icon(Icons.music_note, size: 14, color: AppTheme.cyanAccent),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              track.tag,
+                                              style: const TextStyle(fontSize: 12, color: AppTheme.cyanAccent),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ],
@@ -381,7 +428,7 @@ class _MusicScreenState extends State<MusicScreen> {
                                 // Song details info button
                                 Semantics(
                                   button: true,
-                                  label: 'View details and story for ${track.title}',
+                                  label: 'مشاهده داستان و توضیحات قطعه ${track.title}',
                                   child: IconButton(
                                     icon: const Icon(Icons.info_outline, color: AppTheme.textMuted),
                                     onPressed: () => _showTrackDetails(track),
