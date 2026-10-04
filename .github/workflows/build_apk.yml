@@ -9,7 +9,10 @@ on:
     branches:
       - main
       - master
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -50,12 +53,29 @@ jobs:
       - name: Rename APK for Easy Identification
         run: |
           mkdir -p build-output
-          cp build/app/outputs/flutter-apk/app-release.apk build-output/BlindGenius-v1.0.0-release.apk
+          cp build/app/outputs/flutter-apk/app-release.apk build-output/BlindGenius-v1.0.1-release.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BlindGenius-Release-APK
-          path: build-output/BlindGenius-v1.0.0-release.apk
+          path: build-output/BlindGenius-v1.0.1-release.apk
           retention-days: 14
           if-no-files-found: error
+
+      - name: Publish to GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.1
+          name: Blind Genius v1.0.1 (Release APK)
+          files: build-output/BlindGenius-v1.0.1-release.apk
+          draft: false
+          prerelease: false
+          body: |
+            نسخه رسمی و نهایی اپلیکیشن نابغه نابینا (Blind Genius v1.0.1)
+            - دارای امضای رسمی دائم (Release Keystore) جهت حل مشکل نصب نشدن
+            - نسخه ۲ (VersionCode 2) برای ارتقای تمیز و بدون تداخل
+            - ۲۴ قطعه موسیقی واقعی استخراج‌شده از تلگرام با پخش آنلاین
+            - دسترسی‌پذیری کامل برای TalkBack
+
