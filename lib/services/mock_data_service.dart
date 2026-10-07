@@ -338,46 +338,150 @@ class MockDataService {
 
   static List<Track> get tracks => sampleTracks;
 
-  static const List<VideoClip> clips = [
-    VideoClip(
+  static const List<ClipItem> sampleClips = [
+    ClipItem(
       id: 'clip-1',
-      title: 'آموزش پیانو با لمس کلاویه‌ها بدون دیدن',
-      description: 'ویدیوی اختصاصی آموزش حسی ساز پیانو برای هنرجویان نابینا و کم‌بینا توسط سلیمان هاشمی‌زاده.',
-      duration: Duration(minutes: 5, seconds: 40),
-      durationSpoken: 'پنج دقیقه و چهل ثانیه',
-      thumbnailUrl: '',
+      title: 'How I "See" the Piano: A Blind Virtuoso Explains',
+      duration: Duration(minutes: 5, seconds: 12),
+      category: 'Inspiration',
+      description: 'An intimate studio conversation on how tactile memory, ear training, and mental visualization guide virtuosic performances.',
       hasAudioDescription: true,
-      hasClosedCaptions: true,
+      visualDescription: 'Blind Genius sitting at a grand piano in warm stage light, demonstrating acoustic spatial awareness by gently hovering hands over keys.',
+      transcript: 'When I touch the keyboard, darkness disappears. Every chord creates a vibrant geometry in my mind that is brighter than sunlight. Here is how I translate spatial awareness into harmonies...',
     ),
-    VideoClip(
+    ClipItem(
       id: 'clip-2',
-      title: 'تمرین بداهه‌نوازی در گام شور',
-      description: 'تمرین صدابرداری و تنظیم بداهه‌نوازی در استودیو با استفاده از صفحه‌خوان صوتی.',
-      duration: Duration(minutes: 7, seconds: 15),
-      durationSpoken: 'هفت دقیقه و پانزده ثانیه',
-      thumbnailUrl: '',
+      title: 'Masterclass: Improvise with No Sheet Music',
+      duration: Duration(minutes: 7, seconds: 42),
+      category: 'Tutorial',
+      description: 'Techniques for ear training, muscle memory, and feeling chord changes without visual notation.',
       hasAudioDescription: true,
-      hasClosedCaptions: false,
+      visualDescription: 'Close-up on hands dancing swiftly across black and white keys, followed by an over-the-shoulder angle demonstrating finger placement.',
+      transcript: 'Welcome to this masterclass. Throw away the idea that you need eyes to understand harmony. Your ears can perceive subtle frequency shifts faster than eyes can read notes on a staff...',
+    ),
+    ClipItem(
+      id: 'clip-3',
+      title: 'Carnegie Hall Standing Ovation Reaction',
+      duration: Duration(minutes: 3, seconds: 55),
+      category: 'Behind the Scenes',
+      description: 'Emotional moments backstage following the sold-out Carnegie Hall solo concert.',
+      hasAudioDescription: true,
+      visualDescription: 'The backstage corridor buzzing with excitement. Blind Genius hugs his mentor and family, tears of joy reflecting stage spotlights.',
+      transcript: 'The acoustic warmth of three thousand people holding their breath between the piano cadenzas was an experience I will never forget...',
+    ),
+    ClipItem(
+      id: 'clip-4',
+      title: 'Blindfolding the Philharmonic Orchestra',
+      duration: Duration(minutes: 6, seconds: 10),
+      category: 'Experiment',
+      description: 'An acoustic experiment where 40 orchestra musicians played blindfolded to deepen listening.',
+      hasAudioDescription: true,
+      visualDescription: 'Violinists, cellists, and percussionists wearing black silk blindfolds, leaning in to listen intently to each other during a Bach concerto.',
+      transcript: 'When visual cues disappear, the ensemble stops watching the baton and begins breathing together as a single organism...',
     ),
   ];
 
-  static const List<Challenge> challenges = [
+  static const List<Challenge> sampleChallenges = [
     Challenge(
       id: 'chal-1',
-      title: 'چالش گوش موسیقیایی',
-      description: 'تشخیص فواصل و گام‌های موسیقی به صورت شنیداری برای تقویت حس شنوایی نوازندگان.',
-      xpReward: 150,
-      badgeName: 'گوش طلایی',
-      isCompleted: false,
+      title: 'Feel the Rhythm: Blindfolded Beat Test',
+      difficulty: 'Beginner',
+      deadline: 'Ends in 4 days',
+      reward: 'Exclusive Gold Audio Badge & Feedback',
+      description: 'Listen to a rhythmic audio prompt and record your response using hand claps or tap gestures without looking at the screen.',
+      instructions: '1. Put your phone face down.\n2. Tap the start tone.\n3. Repeat the 3 rhythmic patterns by tapping on your device or desk.\n4. Screen reader will announce your accuracy score.',
+      participantsCount: 328,
+    ),
+    Challenge(
+      id: 'chal-2',
+      title: 'Improvise in C Minor: 30-Second Jam',
+      difficulty: 'Intermediate',
+      deadline: 'Ends in 8 days',
+      reward: 'Feature in Blind Genius Community Podcast',
+      description: 'Compose or hum an emotional 30-second melody over our provided acoustic backing track.',
+      instructions: '1. Listen to the 30-second backing loop.\n2. Record your audio track via microphone or MIDI.\n3. Submit with your audio title and inspiration story.',
+      participantsCount: 194,
+    ),
+    Challenge(
+      id: 'chal-3',
+      title: 'Acoustic Navigation Soundwalk',
+      difficulty: 'All Levels',
+      deadline: 'Active Ongoing',
+      reward: 'Accessibility Champion Trophy',
+      description: 'Record ambient sounds of your neighborhood and describe what auditory cues tell you where you are.',
+      instructions: 'Capture everyday sounds (chirping birds, reverberant alleys, footsteps) and explain how sound tells stories.',
+      participantsCount: 512,
     ),
   ];
 
-  static const List<Achievement> achievements = [
+  static const List<CommunityEvent> sampleEvents = [
+    CommunityEvent(
+      id: 'evt-1',
+      title: 'Global Live Audio Stream: Autumn Recital',
+      date: 'Saturday, November 14',
+      time: '19:00 UTC (8:00 PM CET)',
+      format: 'Binaural 3D Audio Stream',
+      locationOrPlatform: 'Blind Genius Live Channel',
+      description: 'Experience a live virtual concert recorded in binaural spatial audio. Headphone listening recommended for immersive 360-degree acoustic stage presence.',
+      isRegistered: true,
+    ),
+    CommunityEvent(
+      id: 'evt-2',
+      title: 'Interactive Q&A: Assistive Tech in Music Production',
+      date: 'Thursday, November 26',
+      time: '17:30 UTC',
+      format: 'Live Audio Panel & Audience Chat',
+      locationOrPlatform: 'Blind Genius Audio Stage',
+      description: 'Discussion with leading blind audio engineers on using DAWs, screen readers like TalkBack/VoiceOver, and accessible synthesizer controls.',
+      isRegistered: false,
+    ),
+    CommunityEvent(
+      id: 'evt-3',
+      title: 'World Accessibility Day Masterclass',
+      date: 'Sunday, December 06',
+      time: '15:00 UTC',
+      format: 'Hands-on Online Workshop',
+      locationOrPlatform: 'Accessible Stream Room',
+      description: 'Special workshop celebrating accessibility in arts and empowering next-generation visually impaired creators.',
+      isRegistered: false,
+    ),
+  ];
+
+  static const List<Achievement> sampleAchievements = [
     Achievement(
-      id: 'ach-1',
-      title: 'هنرجوی پیگیر',
-      description: 'گوش دادن به ۵ قطعه مختلف در یک هفته',
-      unlockedAt: '۱۴۰۳/۰۷/۱۰',
+      year: '2025',
+      title: 'Global Accessibility Cultural Ambassador',
+      organization: 'United Nations UNESCO Arts Initiative',
+      description: 'Honored for pioneering accessible music experiences and championing universal digital access for blind artists across 45 nations.',
+      iconType: 'trophy',
+    ),
+    Achievement(
+      year: '2024',
+      title: 'Carnegie Hall Solo Debut & Standing Ovation',
+      organization: 'Carnegie Hall Foundation, New York',
+      description: 'Performed a critically acclaimed sold-out solo piano recital featuring original compositions and classical sonatas.',
+      iconType: 'music',
+    ),
+    Achievement(
+      year: '2023',
+      title: '50 Million Global Acoustic Streams',
+      organization: 'International Streaming Alliance',
+      description: 'Reached over 50 million listeners worldwide with purely instrumental piano and binaural acoustic releases.',
+      iconType: 'chart',
+    ),
+    Achievement(
+      year: '2022',
+      title: 'Golden Lyre for Instrumental Composition',
+      organization: 'European Music Laureates',
+      description: 'Awarded first place for the orchestral symphony "Echoes of Triumph", composed entirely without visual notation.',
+      iconType: 'star',
+    ),
+    Achievement(
+      year: '2020',
+      title: 'Assistive Tech Innovation in Arts Award',
+      organization: 'Accessible Technology Forum',
+      description: 'Recognized for co-developing haptic tactile feedback protocols for digital keyboard controllers.',
+      iconType: 'verified',
     ),
   ];
 }
