@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:encrypt/encrypt.dart';
+import 'package:encrypt/encrypt.dart' as enc;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'accessibility_service.dart';
@@ -108,7 +108,7 @@ class RemoteTrackService extends ChangeNotifier {
   }
 
   static String _decryptPayload(String combinedBase64) {
-    final key = Key.fromUtf8(_secretKey);
+    final key = enc.Key.fromUtf8(_secretKey);
     final rawBytes = base64.decode(combinedBase64);
     if (rawBytes.length < 17) {
       throw Exception('Invalid encrypted payload');
@@ -116,8 +116,8 @@ class RemoteTrackService extends ChangeNotifier {
     final ivBytes = rawBytes.sublist(0, 16);
     final cipherBytes = rawBytes.sublist(16);
 
-    final iv = IV(Uint8List.fromList(ivBytes));
-    final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-    return encrypter.decrypt(Encrypted(Uint8List.fromList(cipherBytes)), iv: iv);
+    final iv = enc.IV(Uint8List.fromList(ivBytes));
+    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+    return encrypter.decrypt(enc.Encrypted(Uint8List.fromList(cipherBytes)), iv: iv);
   }
 }

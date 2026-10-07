@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
@@ -12,6 +11,13 @@ class AccessibilityService {
     } catch (_) {
       // Fallback safe ignore if semantics service is unavailable
     }
+  }
+
+  /// Triggers a success haptic pattern for completed actions.
+  static Future<void> hapticSuccess() async {
+    try {
+      await HapticFeedback.mediumImpact();
+    } catch (_) {}
   }
 
   /// Triggers a light tactile haptic click for navigation or item selection.
