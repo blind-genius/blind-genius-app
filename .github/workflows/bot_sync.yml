@@ -2,7 +2,7 @@ name: Telegram Channel Auto-Sync Bot
 
 on:
   schedule:
-    - cron: '0 * * * *' # Every 1 hour
+    - cron: '*/10 * * * *' # Every 10 minutes
   workflow_dispatch: # Allows manual run with a click
 
 permissions:
@@ -27,14 +27,19 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install pycryptodome
+          pip install -r requirements.txt
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run Telegram Bot Sync
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           OWNER_CHAT_ID: '1474213563'
           CHANNEL_ID: '-1004321749584'
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
         run: |
           python scripts/telegram_bot_sync.py --once

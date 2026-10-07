@@ -37,13 +37,26 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "blind-genius/blind-genius-app")
 ENCRYPTION_KEY = b"BlindGeniusMusicSecretKey2026!@#" # Exactly 32 bytes for AES-256
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 METADATA_JSON_PATH = os.path.join(BASE_DIR, "tracks_metadata.json")
 METADATA_ENC_PATH = os.path.join(BASE_DIR, "tracks_metadata.enc")
+PENDING_FILE = os.path.join(BASE_DIR, "pending_approvals.json")
 
-# In-memory pending approval store {message_id: post_data}
-pending_approvals = {}
+def load_pending():
+    if os.path.exists(PENDING_FILE):
+        try:
+            with open(PENDING_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_pending(data):
+    try:
+        with open(PENDING_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving pending approvals: {e}")
 
 def send_telegram(method, payload):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/{method}"
@@ -78,6 +91,18 @@ def handle_channel_post(post):
     msg_id = post.get("message_id")
     print(f"\n[Channel Post] Detected message ID: {msg_id}")
 
+    # Check if already in tracks_metadata.json
+    if os.path.exists(METADATA_JSON_PATH):
+        try:
+            with open(METADATA_JSON_PATH, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+                for t in existing:
+                    if t.get("telegram_message_id") == msg_id or t.get("id") == msg_id:
+                        print(f"  -> ALREADY IMPORTED: Track {msg_id} is already in tracks_metadata.json.")
+                        return
+        except Exception:
+            pass
+
     # --- LAYER 1: Forward filter ---
     if post.get("forward_origin") or post.get("forward_from") or post.get("forward_from_chat"):
         print("  -> LAYER 1 REJECTED: Message is forwarded from another source.")
@@ -101,11 +126,17 @@ def handle_channel_post(post):
     secs = duration_secs % 60
     duration_str = f"{mins:02d}:{secs:02d}"
 
-    title = audio.get("title") or file_name.replace(".mp3", "")
+    title = audio.get("title") or file_name.replace(".mp3", "").replace("-", " ").replace("_", " ").title()
     if caption:
-        first_line = caption.split("\n")[0]
-        if len(first_line) < 60:
-            title = first_line
+        lines = [ln.strip() for ln in caption.split("\n") if ln.strip()]
+        found_specific = False
+        for line in lines:
+            if any(kw in line for kw in ["قطعه", "آهنگ", "موسیقی"]) and len(line) < 80:
+                title = line
+                found_specific = True
+                break
+        if not found_specific and lines and len(lines[0]) < 60:
+            title = lines[0]
 
     post_data = {
         "id": msg_id,
@@ -119,7 +150,13 @@ def handle_channel_post(post):
         "telegram_link": f"https://t.me/blind_genius1/{msg_id}",
     }
 
-    pending_approvals[msg_id] = post_data
+    pending = load_pending()
+    if str(msg_id) in pending:
+        print(f"  -> ALREADY PENDING: Track {msg_id} is already awaiting confirmation.")
+        return
+
+    pending[str(msg_id)] = post_data
+    save_pending(pending)
 
     # --- LAYER 3: Interactive Confirmation in Owner's Private Chat ---
     text = (
@@ -148,19 +185,31 @@ def handle_channel_post(post):
     })
     print(f"  -> LAYER 3 PENDING: Confirmation request sent to owner ({OWNER_CHAT_ID}).")
 
+    # Persist pending file to git if running in GitHub Actions
+    if os.environ.get("GITHUB_ACTIONS"):
+        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=BASE_DIR)
+        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], cwd=BASE_DIR)
+        subprocess.run(["git", "add", "pending_approvals.json"], cwd=BASE_DIR)
+        subprocess.run(["git", "commit", "-m", f"chore: register pending track {msg_id}"], cwd=BASE_DIR)
+        push_remote = f"https://x-access-token:{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git" if GITHUB_TOKEN else "origin"
+        subprocess.run(["git", "push", push_remote, "main"], cwd=BASE_DIR)
+
 def process_approval(msg_id, callback_query_id):
-    if msg_id not in pending_approvals:
+    pending = load_pending()
+    if str(msg_id) not in pending:
         send_telegram("answerCallbackQuery", {
             "callback_query_id": callback_query_id,
-            "text": "اطلاعات این قطعه منقضی شده است.",
+            "text": "اطلاعات این قطعه یافت نشد یا قبلاً پردازش شده است.",
             "show_alert": True
         })
         return
 
-    post_data = pending_approvals.pop(msg_id)
+    post_data = pending.pop(str(msg_id))
+    save_pending(pending)
+
     send_telegram("answerCallbackQuery", {
         "callback_query_id": callback_query_id,
-        "text": "در حال پردازش و آپلود قطعه به گیت‌هاب..."
+        "text": "در حال دریافت و آپلود فایل صوتی به گیت‌هاب..."
     })
 
     send_telegram("sendMessage", {
@@ -189,7 +238,6 @@ def process_approval(msg_id, callback_query_id):
     tag_name = f"v1.0.{msg_id}-audio"
     asset_name = f"track_{msg_id}.mp3"
     
-    # Create draft release
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
@@ -214,15 +262,22 @@ def process_approval(msg_id, callback_query_id):
         upload_base = rel["upload_url"].split("{")[0]
         rel_id = rel["id"]
 
-    # Upload via curl
+    # Native Python Binary Upload
     upload_url = f"{upload_base}?name={asset_name}"
-    subprocess.run([
-        "curl.exe", "-s", "-S", "-X", "POST",
-        "-H", f"Authorization: token {GITHUB_TOKEN}",
-        "-H", "Content-Type: audio/mpeg",
-        "--data-binary", f"@{local_download}",
-        upload_url
-    ])
+    with open(local_download, "rb") as bf:
+        file_bytes = bf.read()
+    req_upload = urllib.request.Request(
+        upload_url,
+        data=file_bytes,
+        headers={
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Content-Type": "audio/mpeg",
+            "User-Agent": "BlindGeniusBot"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(req_upload, timeout=180) as r:
+        pass
 
     # Publish release
     req_pub = urllib.request.Request(
@@ -262,9 +317,12 @@ def process_approval(msg_id, callback_query_id):
     encrypt_metadata_file()
 
     # 5. Git Commit and Push
-    subprocess.run(["git", "add", "tracks_metadata.json", "tracks_metadata.enc"], cwd=BASE_DIR)
+    subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=BASE_DIR)
+    subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], cwd=BASE_DIR)
+    subprocess.run(["git", "add", "tracks_metadata.json", "tracks_metadata.enc", "pending_approvals.json"], cwd=BASE_DIR)
     subprocess.run(["git", "commit", "-m", f"feat(tracks): add track {msg_id} - {post_data['title']}"], cwd=BASE_DIR)
-    subprocess.run(["git", "push"], cwd=BASE_DIR)
+    push_remote = f"https://x-access-token:{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git" if GITHUB_TOKEN else "origin"
+    subprocess.run(["git", "push", push_remote, "main"], cwd=BASE_DIR)
 
     # 6. Notify owner
     send_telegram("sendMessage", {
@@ -295,11 +353,15 @@ def handle_private_message(message):
         except Exception:
             pass
 
+    pending = load_pending()
+    pending_count = len(pending)
+
     if text.startswith("/status"):
         status_text = (
             f"📊 <b>وضعیت سامانه نابغه نابینا</b>\n\n"
-            f"✅ ربات فعال و آنلاین است.\n"
-            f"🎵 تعداد کل قطعات رسمی: <b>{track_count} قطعه</b>\n"
+            f"✅ ربات فعال و متصل است.\n"
+            f"🎵 تعداد کل قطعات آرشیو: <b>{track_count} قطعه</b>\n"
+            f"⏳ قطعات در انتظار تأیید: <b>{pending_count}</b>\n"
             f"🔒 سیستم رمزنگاری: AES-256 فعال است.\n"
             f"📡 کانال متصل: @Blind_genius1\n"
             f"👤 کاربر مدیر: سلیمان هاشمی‌زاده"
@@ -358,7 +420,9 @@ def poll_telegram_updates(run_once=False):
                                 process_approval(msg_id, cb["id"])
                             elif data.startswith("reject_"):
                                 msg_id = int(data.split("_")[1])
-                                pending_approvals.pop(msg_id, None)
+                                pending = load_pending()
+                                pending.pop(str(msg_id), None)
+                                save_pending(pending)
                                 send_telegram("answerCallbackQuery", {
                                     "callback_query_id": cb["id"],
                                     "text": "قطعه نادیده گرفته شد."
@@ -383,4 +447,3 @@ def poll_telegram_updates(run_once=False):
 if __name__ == "__main__":
     is_once = "--once" in sys.argv
     poll_telegram_updates(run_once=is_once)
-
