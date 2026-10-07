@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../services/accessibility_service.dart';
 import '../services/audio_service.dart';
 import '../services/mock_data_service.dart';
+import '../services/remote_track_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/accessible_card.dart';
 
@@ -18,16 +19,36 @@ class MusicScreen extends StatefulWidget {
 class _MusicScreenState extends State<MusicScreen> {
   late String _selectedTag;
   final TextEditingController _searchController = TextEditingController();
+  final RemoteTrackService _remoteService = RemoteTrackService();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _selectedTag = MockDataService.musicTags.first;
+    _remoteService.addListener(_onRemoteTracksChanged);
+  }
+
+  @override
+  void dispose() {
+    _remoteService.removeListener(_onRemoteTracksChanged);
+    _remoteService.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onRemoteTracksChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   List<Track> get _filteredTracks {
-    return MockDataService.sampleTracks.where((track) {
+    final sourceList = _remoteService.tracks.isNotEmpty
+        ? _remoteService.tracks
+        : MockDataService.sampleTracks;
+
+    return sourceList.where((track) {
       final isAll = _selectedTag == 'همه' || _selectedTag == 'All';
       final matchesTag = isAll || track.tag == _selectedTag;
       final q = _searchQuery.trim().toLowerCase();
@@ -39,6 +60,7 @@ class _MusicScreenState extends State<MusicScreen> {
       return matchesTag && matchesQuery;
     }).toList();
   }
+
 
   void _onTagSelected(String tag) {
     if (_selectedTag == tag) return;
@@ -247,18 +269,53 @@ class _MusicScreenState extends State<MusicScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Accessible Tags Horizontal Filter
-                  Semantics(
-                    header: true,
-                    child: const Text(
-                      'دسته‌بندی‌ها',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textSecondary,
-                        letterSpacing: 0.5,
+                  // Accessible Tags Horizontal Filter & Sync Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: const Text(
+                          'دسته‌بندی‌ها',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textSecondary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
-                    ),
+                      Semantics(
+                        button: true,
+                        label: 'بروزرسانی آنلاین آرشیو موسیقی از گیت‌هاب',
+                        hint: 'دو بار ضربه بزنید برای دریافت جدیدترین قطعات بدون نیاز به آپدیت برنامه',
+                        child: InkWell(
+                          onTap: () => _remoteService.fetchRemoteTracks(),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_remoteService.isLoading)
+                                  const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.goldAccent),
+                                  )
+                                else
+                                  const Icon(Icons.sync, size: 16, color: AppTheme.goldAccent),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'همگام‌سازی آنلاین',
+                                  style: TextStyle(fontSize: 12, color: AppTheme.goldAccent, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -302,21 +359,25 @@ class _MusicScreenState extends State<MusicScreen> {
 
             // Track List
             Expanded(
-              child: _filteredTracks.isEmpty
-                  ? Center(
-                      child: Semantics(
-                        label: 'هیچ قطعه‌ای مطابق با جستجو یا فیلتر پیدا نشد.',
-                        child: const Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text(
-                            'قطعه‌ای مطابق با جستجو یافت نشد.\nدسته‌بندی دیگری را انتخاب کنید.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppTheme.textMuted, fontSize: 16),
+              child: RefreshIndicator(
+                onRefresh: () => _remoteService.fetchRemoteTracks(),
+                color: AppTheme.goldAccent,
+                backgroundColor: AppTheme.surface,
+                child: _filteredTracks.isEmpty
+                    ? Center(
+                        child: Semantics(
+                          label: 'هیچ قطعه‌ای مطابق با جستجو یا فیلتر پیدا نشد.',
+                          child: const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Text(
+                              'قطعه‌ای مطابق با جستجو یافت نشد.\nدسته‌بندی دیگری را انتخاب کنید.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppTheme.textMuted, fontSize: 16),
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                  : ListView.builder(
+                      )
+                    : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       itemCount: _filteredTracks.length,
                       itemBuilder: (context, index) {
@@ -440,6 +501,7 @@ class _MusicScreenState extends State<MusicScreen> {
                         );
                       },
                     ),
+              ),
             ),
           ],
         );

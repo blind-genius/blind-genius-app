@@ -53,13 +53,13 @@ jobs:
       - name: Rename APK for Easy Identification
         run: |
           mkdir -p build-output
-          cp build/app/outputs/flutter-apk/app-release.apk build-output/BlindGenius-v1.0.1-release.apk
+          cp build/app/outputs/flutter-apk/app-release.apk build-output/BlindGenius-v1.0.2-release.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BlindGenius-Release-APK
-          path: build-output/BlindGenius-v1.0.1-release.apk
+          path: build-output/BlindGenius-v1.0.2-release.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -67,15 +67,17 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: Blind Genius v1.0.1 (Release APK)
-          files: build-output/BlindGenius-v1.0.1-release.apk
+          tag_name: v1.0.2
+          name: Blind Genius v1.0.2 (Dynamic Remote Sync & 25 Tracks)
+          files: build-output/BlindGenius-v1.0.2-release.apk
           draft: false
           prerelease: false
           body: |
-            نسخه رسمی و نهایی اپلیکیشن نابغه نابینا (Blind Genius v1.0.1)
-            - دارای امضای رسمی دائم (Release Keystore) جهت حل مشکل نصب نشدن
-            - نسخه ۲ (VersionCode 2) برای ارتقای تمیز و بدون تداخل
-            - ۲۴ قطعه موسیقی واقعی استخراج‌شده از تلگرام با پخش آنلاین
-            - دسترسی‌پذیری کامل برای TalkBack
+            نسخه جدید و رسمی اپلیکیشن نابغه نابینا (Blind Genius v1.0.2)
+            - مجهز به دریافت خودکار و آنلاین قطعات جدید از طریق فایل رمزگذاری‌شده AES-256
+            - بدون نیاز به آپدیت دوباره برنامه با ارسال آهنگ‌های جدید در تلگرام
+            - دارای ۲۵ قطعه موسیقی واقعی (شامل آهنگ جدید بی‌قرار از معین)
+            - دکمه همگام‌سازی دسترس‌پذیر و پشتیبانی کامل از TalkBack
+            - امضا شده با کلید رسمی دائمی (Release Keystore)
+
 

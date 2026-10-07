@@ -1,7 +1,7 @@
 name: blind_genius
 description: "Blind Genius - Accessible Music & Media App for Android with full TalkBack and Screen Reader support."
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.2.3
   just_audio: ^0.9.40
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:

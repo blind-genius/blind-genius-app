@@ -19,7 +19,7 @@
     "duration": "03:57",
     "telegram_link": "https://t.me/blind_genius1/3",
     "telegram_message_id": 3,
-    "stream_url": ""
+    "stream_url": "https://github.com/blind-genius/blind-genius-app/releases/download/v1.0.1-audio/ai-adamha.mp3"
   },
   {
     "id": 4,
@@ -41,7 +41,7 @@
     "duration": "06:01",
     "telegram_link": "https://t.me/blind_genius1/6",
     "telegram_message_id": 6,
-    "stream_url": ""
+    "stream_url": "https://github.com/blind-genius/blind-genius-app/releases/download/v1.0.1-audio/ey-aasheghan-v1.mp3"
   },
   {
     "id": 7,
@@ -52,7 +52,7 @@
     "duration": "06:08",
     "telegram_link": "https://t.me/blind_genius1/7",
     "telegram_message_id": 7,
-    "stream_url": ""
+    "stream_url": "https://github.com/blind-genius/blind-genius-app/releases/download/v1.0.1-audio/ey-aasheghan-v2.mp3"
   },
   {
     "id": 9,
@@ -278,5 +278,25 @@
     "telegram_link": "https://t.me/blind_genius1/41",
     "telegram_message_id": 41,
     "stream_url": "https://github.com/blind-genius/blind-genius-app/releases/download/v1.0.0-audio/parvane.mp3"
+  },
+  {
+    "id": 43,
+    "title": "آهنگ بی قرار از معین با نوازندگی نابغه نابینا",
+    "filename": "moin-bigharar.mp3",
+    "caption": "سلاااااام عزیزای دل.\nهمون طوری که وعده داده بودیم، یک کار جانانه از استاد معین عزیز براتون آماده کردیم.\nقطعه بیقرار از استاد معین بزرگوار با نوازندگی: سلیمان هاشمی زاده (blind genius)\nکانال ما رو با دوستان خوبتون به اشتراک بذارید\n@Blind_genius1\n#معین #معین_بیقرار #بیقرار #موزیک #نوستالژی #سلیمان_هاشمی_زاده #نوازندگی #blind_genius",
+    "tags": [
+      "#معین",
+      "#معین_بیقرار",
+      "#بیقرار",
+      "#موزیک",
+      "#نوستالژی",
+      "#سلیمان_هاشمی_زاده",
+      "#نوازندگی",
+      "#blind_genius"
+    ],
+    "duration": "03:36",
+    "telegram_link": "https://t.me/blind_genius1/43",
+    "telegram_message_id": 43,
+    "stream_url": "https://github.com/blind-genius/blind-genius-app/releases/download/v1.0.2-audio/moin-bigharar.mp3"
   }
 ]
