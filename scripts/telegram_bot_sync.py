@@ -274,6 +274,61 @@ def process_approval(msg_id, callback_query_id):
     })
     print(f"SUCCESS: Track {msg_id} fully published and synced.")
 
+def handle_private_message(message):
+    from_user = message.get("from", {})
+    user_id = from_user.get("id")
+    chat_id = message.get("chat", {}).get("id")
+    text = (message.get("text") or "").strip()
+
+    if user_id != OWNER_CHAT_ID:
+        send_telegram("sendMessage", {
+            "chat_id": chat_id,
+            "text": "⛔️ شما دسترسی مجاز به پنل مدیریت این ربات را ندارید."
+        })
+        return
+
+    track_count = 0
+    if os.path.exists(METADATA_JSON_PATH):
+        try:
+            with open(METADATA_JSON_PATH, "r", encoding="utf-8") as f:
+                track_count = len(json.load(f))
+        except Exception:
+            pass
+
+    if text.startswith("/status"):
+        status_text = (
+            f"📊 <b>وضعیت سامانه نابغه نابینا</b>\n\n"
+            f"✅ ربات فعال و آنلاین است.\n"
+            f"🎵 تعداد کل قطعات رسمی: <b>{track_count} قطعه</b>\n"
+            f"🔒 سیستم رمزنگاری: AES-256 فعال است.\n"
+            f"📡 کانال متصل: @Blind_genius1\n"
+            f"👤 کاربر مدیر: سلیمان هاشمی‌زاده"
+        )
+        send_telegram("sendMessage", {
+            "chat_id": chat_id,
+            "text": status_text,
+            "parse_mode": "HTML"
+        })
+    else:
+        welcome_text = (
+            f"سلام و عرض ادب جناب هاشمی‌زاده عزیز! 🎹✨\n\n"
+            f"ربات دستیار اختصاصی <b>نابغه نابینا (Blind Genius)</b> آماده به کار است.\n\n"
+            f"🛡 <b>وضعیت سیستم امنیتی ۳ لایه:</b>\n"
+            f"• لایه ۱: جلوگیری از پیام‌های فروارد شده\n"
+            f"• لایه ۲: تشخیص هوشمند فایل‌های صوتی کانال\n"
+            f"• لایه ۳: استعلام تاییدیه مالکیت در همین چت\n\n"
+            f"🎵 <b>آرشیو فعال:</b> {track_count} قطعه موسیقی (رمزگذاری شده با AES-256)\n"
+            f"📢 <b>کانال رصد شونده:</b> @Blind_genius1\n\n"
+            f"دستورات موجود:\n"
+            f"/status - وضعیت سیستم و تعداد آهنگ‌ها\n"
+            f"/help - راهنمای سامانه"
+        )
+        send_telegram("sendMessage", {
+            "chat_id": chat_id,
+            "text": welcome_text,
+            "parse_mode": "HTML"
+        })
+
 def poll_telegram_updates(run_once=False):
     offset = 0
     print("Bot polling started. Listening for channel posts and approvals...")
@@ -287,6 +342,10 @@ def poll_telegram_updates(run_once=False):
                     # Check channel posts
                     if "channel_post" in update:
                         handle_channel_post(update["channel_post"])
+
+                    # Check private messages
+                    if "message" in update:
+                        handle_private_message(update["message"])
 
                     # Check callbacks (approval buttons)
                     if "callback_query" in update:
