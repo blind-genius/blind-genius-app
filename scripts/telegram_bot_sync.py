@@ -371,6 +371,23 @@ def handle_private_message(message):
             "text": status_text,
             "parse_mode": "HTML"
         })
+    elif text.startswith("/title ") or text.startswith("/name "):
+        new_title = text.split(" ", 1)[1].strip()
+        pending = load_pending()
+        if not pending:
+            send_telegram("sendMessage", {
+                "chat_id": chat_id,
+                "text": "❌ هیچ قطعه‌ای در صف انتظار تأیید وجود ندارد."
+            })
+            return
+        latest_id = list(pending.keys())[-1]
+        pending[latest_id]["title"] = new_title
+        save_pending(pending)
+        send_telegram("sendMessage", {
+            "chat_id": chat_id,
+            "text": f"✅ عنوان قطعه شماره {latest_id} با موفقیت به «<b>{new_title}</b>» تغییر یافت.\n\nاکنون می‌توانید دکمه تأیید را لمس کنید.",
+            "parse_mode": "HTML"
+        })
     else:
         welcome_text = (
             f"سلام و عرض ادب جناب هاشمی‌زاده عزیز! 🎹✨\n\n"
