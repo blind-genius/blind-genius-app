@@ -449,6 +449,8 @@ def poll_telegram_updates(run_once=False):
                                     "text": "❌ قطعه به عنوان اثر متفرقه علامت‌گذاری و رد شد."
                                 })
             if run_once:
+                if offset > 0:
+                    send_telegram("getUpdates", {"offset": offset, "limit": 1})
                 print("One-time polling pass completed.")
                 break
             time.sleep(1)
