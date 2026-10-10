@@ -65,10 +65,18 @@ def send_telegram(method, payload):
         url, data=data,
         headers={"Content-Type": "application/json", "User-Agent": "BlindGeniusBot"}
     )
+    timeout_val = 35 if method == "getUpdates" else 20
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=timeout_val) as resp:
             return json.loads(resp.read().decode())
+    except urllib.error.URLError as e:
+        if "timed out" in str(e).lower() and method == "getUpdates":
+            return {"ok": True, "result": []}
+        print(f"Telegram API Error ({method}): {e}")
+        return None
     except Exception as e:
+        if "timed out" in str(e).lower() and method == "getUpdates":
+            return {"ok": True, "result": []}
         print(f"Telegram API Error ({method}): {e}")
         return None
 
